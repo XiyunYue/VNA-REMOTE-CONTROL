@@ -1,0 +1,49 @@
+function [] = save_data_csv(vna, foldername)
+%SAVE_DATA_CSV 通过 visadev 采集并保存数据为 CSV 文件
+%   vna        : visadev 对象
+%   foldername : 保存目录（string 或 char）
+
+    % 创建保存目录（若不存在）
+    if ~exist(foldername, 'dir')
+        mkdir(foldername);
+    end
+
+    % ==== 获取数据 ====
+    % 开始测量
+    writeline(vna, "INIT:IMM; *WAI");
+
+    % 获取通道列表
+    channelStr = queryline(vna, "CALCULATE1:PARAMETER:CATALOG?");
+    channels = strsplit(channelStr, ',');
+    channels = channels(2:2:end); % 取出通道名
+
+    % 获取频率轴
+    freqStr = queryline(vna, "SENSE1:FREQUENCY:DATA?");
+    frequency_axis = str2double(strsplit(freqStr, ','));
+
+    % 获取功率
+    powerStr = queryline(vna, "SOURce1:POWer:LEVel:IMMediate:AMPLitude?");
+    power = str2double(powerStr);
+
+    % 获取数据
+    rawStr = queryline(vna, "CALCULATE1:DATA? SDATA");
+    raw_data = str2double(strsplit(rawStr, ','));
+
+    % 每个通道的复数数据
+    data = reshape(raw_data, 2, []); % [实部; 虚部]
+    data = data(1,:) + 1j*data(2,:);
+
+    % ==== 拼接保存内容 ====
+    % 转成 dB
+    data_dB = 20*log10(abs(data));
+
+    % 保存 CSV
+    timestamp = datestr(now,'yyyymmdd_HHMMSS');
+    csv_filename = fullfile(foldername, strcat("vna_data_", timestamp, ".csv"));
+
+    % 表格化
+    T = table(frequency_axis.', data_dB.', 'VariableNames', {'Frequency_Hz','Magnitude_dB'});
+    writetable(T, csv_filename);
+
+    disp("✅ 数据已保存到: " + csv_filename);
+end
