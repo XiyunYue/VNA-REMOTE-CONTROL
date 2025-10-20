@@ -17,7 +17,8 @@ end
 %% 设定
 vna_clear_errors(vna);
 foldername = datestr(now,'yyyymmdd');
-folderfullname = fullfile("F:\research\matlab\Experiment\tltest\data", foldername);
+folderPath = input('Please enter the folder path to save data: ', 's');
+folderfullname = fullfile(folderPath, foldername);
 if ~exist(folderfullname, 'dir')  
     mkdir(folderfullname);        
 end
@@ -30,42 +31,17 @@ disp(idn)
 showFourWindows(vna);
 test_time = set_sweep_ft(vna);
 [traceNames, freq] = GetTestPara(vna);
-
-%% 调试
-% [filefullname, baseName] = getExperimentInfo(folderfullname);
-% writeline(vna, "INIT;*WAI");
-% pause(5); 
-% SaveLocal(baseName, vna, foldername)
-% T = ReadandSaveTable(vna, traceNames, freq);
-% errs = vna_read_errors(vna);
-% fprintf(2,"[VNA ERR this run]\n%s\n", strjoin(errs,newline));
-% writetable(T, filefullname + ".xlsx"); 
-% while true
-%     [filefullname, baseName] = getExperimentInfo(folderfullname);
-%     writeline(vna, "INIT;*WAI");
-%     pause(5); 
-%     SaveLocal(baseName, vna, foldername)
-%     T = ReadandSaveTable(vna, traceNames, freq);
-%     writetable(T, filefullname + ".xlsx");  
-% end
 while true
     [filefullname, baseName] = getExperimentInfo(folderfullname);
-    
-    % --- 如果用户点了取消 ---
     if isempty(filefullname) || isempty(baseName)
-        disp("用户取消，退出循环。");
+        disp("Cancel");
         break;
     end
-    
-    % --- 正常流程 ---
     writeline(vna, "INIT;*WAI");
     pause(5); 
-    SaveLocal(baseName, vna, foldername)
     T = ReadandSaveTable(vna, traceNames, freq);
     writetable(T, filefullname + ".xlsx");  
 end
 disp('end');
 clear vna
-%% 清缓冲和错误
-% flush(vna);
-% writeline(vna,'*CLS');
+
